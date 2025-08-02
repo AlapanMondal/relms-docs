@@ -2,14 +2,319 @@
 
 *A comprehensive guide for understanding how the lottery allocation system works*
 
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Inventory Structure](#inventory-structure)
+3. [Application Lifecycle Flow](#application-lifecycle-flow)
+4. [How the Lottery Works](#how-the-lottery-works)
+5. [Configuration Examples](#configuration-examples)
+6. [Understanding Bias vs Fairness](#understanding-bias-vs-fairness)
+7. [Visual Score Calculation](#visual-score-calculation)
+8. [Practical Tuning Advice](#practical-tuning-advice)
+9. [Summary](#summary)
+10. [Appendix](#appendix)
+
 ---
 
-## Table of Contents
-1. [How the Lottery Works](#how-the-lottery-works)
-2. [Configuration Examples](#configuration-examples)
-3. [Understanding Bias vs Fairness](#understanding-bias-vs-fairness)
-4. [Visual Score Calculation](#visual-score-calculation)
-5. [Practical Tuning Advice](#practical-tuning-advice)
+## Overview
+
+The Real Estate Lottery Management System (RELMS) is a comprehensive platform designed to fairly and transparently allocate housing units to qualified applicants. The system combines sophisticated inventory management, configurable lottery algorithms, and detailed application lifecycle tracking to ensure equitable distribution of real estate properties.
+
+### Key Features
+
+- **📋 Comprehensive Application Management**: End-to-end application processing from draft to finalization
+- **🏠 Dynamic Inventory Control**: Real-time unit availability and allocation state management
+- **🎯 Configurable Lottery Engine**: Flexible scoring rules and preference weights
+- **📊 Transparent Process**: Complete audit trails and explainable allocation decisions
+- **🔄 Multi-Phase Support**: Handle complex projects with multiple development phases
+- **💳 Integrated Payment Processing**: Online and offline payment verification workflows
+- **📈 Analytics & Reporting**: Comprehensive insights into lottery performance and outcomes
+
+### System Architecture
+
+RELMS is built on a modular architecture that separates business logic from configuration, enabling:
+
+- **Flexibility**: Adapt to different housing programs without code changes
+- **Scalability**: Handle multiple projects and thousands of applications simultaneously
+- **Transparency**: Complete traceability of all decisions and state changes
+- **Compliance**: Built-in audit trails and regulatory compliance features
+
+---
+
+## Inventory Structure
+
+The Real Estate Lottery Management System (RELMS) organizes property inventory in a hierarchical structure to efficiently manage multiple projects, phases, and unit types.
+
+### Inventory Hierarchy
+
+```
+🏢 PROJECT
+├── 📋 Project Details (Name, Location, Developer, Status)
+├── 🏗️ PHASES
+│   ├── Phase 1
+│   │   ├── 📊 Phase Configuration (Timeline, Rules, Pricing)
+│   │   ├── 🏠 UNIT TYPES
+│   │   │   ├── 1BHK Units
+│   │   │   │   ├── Unit A-101 (available/allotted/sold/preferred/hold)
+│   │   │   │   ├── Unit A-102 (available/allotted/sold/preferred/hold)
+│   │   │   │   └── Unit A-103 (available/allotted/sold/preferred/hold)
+│   │   │   ├── 2BHK Units
+│   │   │   │   ├── Unit B-201 (available/allotted/sold/preferred/hold)
+│   │   │   │   └── Unit B-202 (available/allotted/sold/preferred/hold)
+│   │   │   └── 3BHK Units
+│   │   │       └── Unit C-301 (available/allotted/sold/preferred/hold)
+│   │   └── 🎯 LOTTERY CONFIGURATION
+│   │       ├── Scoring Rules
+│   │       ├── Preference Weights
+│   │       └── Allocation Strategy
+│   └── Phase 2
+│       └── (Similar structure)
+└── 📈 PROJECT ANALYTICS
+    ├── Sales Performance
+    ├── Lottery Results
+    └── Customer Demographics
+```
+
+### Key Components
+
+#### **1. Project Level**
+- **Project ID**: Unique identifier for each real estate project
+- **Basic Information**: Name, location, developer details, total units
+- **Status Tracking**: Planning, Active, Completed, Suspended
+- **Financial Overview**: Total value, pricing strategy, payment terms
+
+#### **2. Phase Management**
+- **Phase Segmentation**: Projects divided into manageable phases
+- **Timeline Control**: Start/end dates, milestone tracking
+- **Configuration Inheritance**: Phases can inherit or override project settings
+- **Independent Lotteries**: Each phase can run separate lottery processes
+
+#### **3. Unit Inventory**
+- **Unit Types**: 1BHK, 2BHK, 3BHK, Penthouse, etc.
+- **Unit Specifications**: Size, floor, facing, amenities, pricing
+- **Allocation State**: available, allotted, sold, preferred, hold
+- **Unit Status**: Active, Hold, Landowner, Sold
+- **Allocation Tracking**: Winner assignment, payment status, handover
+
+#### **4. Dynamic Configuration**
+- **Lottery Rules**: Customizable scoring and preference rules per phase
+- **Pricing Strategy**: Base price, discounts, payment plans
+- **Eligibility Criteria**: Income limits, occupation preferences, residency requirements
+- **Booking Process**: Application flow, document requirements, verification steps
+
+### Inventory Management Features
+
+#### **Real-Time Status Updates**
+```json
+{
+  "unitId": "A-101",
+  "allocationState": "available",
+  "unitStatus": "Active",
+  "lastUpdated": "2024-01-15T10:30:00Z",
+  "allottedApplicationId": null,
+  "isVisible": true
+}
+```
+
+#### **Batch Operations**
+- **Bulk Status Updates**: Mark multiple units as available/sold
+- **Price Adjustments**: Apply pricing changes across unit types
+- **Configuration Deployment**: Roll out lottery rules to multiple phases
+
+#### **Inventory Analytics**
+- **Availability Reports**: Real-time unit availability across projects
+- **Sales Performance**: Conversion rates, popular unit types
+- **Demand Analysis**: Application patterns, preference trends
+- **Revenue Tracking**: Sales value, payment collection status
+
+### Integration Points
+
+#### **Application Management**
+- Applications linked to specific project phases
+- Unit preference mapping to available inventory
+- Automatic eligibility checking against project criteria
+
+#### **Lottery Engine**
+- Dynamic unit allocation based on inventory availability
+- Preference matching (applicant choices vs available units)
+- Waitlist management for sold-out categories
+
+---
+
+## Application Lifecycle Flow
+
+The Real Estate Lottery Management System (RELMS) follows a comprehensive application lifecycle that guides each applicant through various stages from initial draft to final allocation or exit.
+
+### Application Status Flow Overview
+
+The application lifecycle consists of multiple stages designed to ensure fair processing, verification, and allocation of units. Each application progresses through these stages based on system rules and manual interventions.
+
+### Application Lifecycle State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft
+
+    %% Submission stage
+    draft --> submitted_online_payment
+    draft --> submitted_offline_payment
+
+    %% Payment processing
+    submitted_online_payment --> payment_success
+    submitted_online_payment --> payment_failed
+    submitted_offline_payment --> payment_success
+    submitted_offline_payment --> payment_failed
+    payment_failed --> submitted_online_payment
+    payment_failed --> submitted_offline_payment
+
+    %% Review and verification
+    payment_success --> under_review
+    under_review --> verified
+    under_review --> rejected_by_REC
+    rejected_by_REC --> refund_processing
+
+    %% Bank decision
+    verified --> bank_approved
+    verified --> bank_rejected
+
+    %% Rejected path
+    bank_rejected --> alternative_offered
+    alternative_offered --> alternative_accepted
+    alternative_offered --> refund_processing
+
+    %% Approved or accepted move forward
+    bank_approved --> preferential_check
+    alternative_accepted --> preferential_check
+
+    %% Allocation process
+    preferential_check --> manual_unit_allocation
+    preferential_check --> lottery_pool
+
+    %% Lottery outcomes
+    lottery_pool --> lottery_selected
+    lottery_pool --> lottery_not_selected
+
+    %% If selected
+    lottery_selected --> finalization
+
+    %% If not selected
+    lottery_not_selected --> waitlisted
+    lottery_not_selected --> refund_processing
+
+    %% Waitlist cycle
+    waitlisted --> lottery_pool
+    waitlisted --> refund_processing
+
+    %% Manual allocation
+    manual_unit_allocation --> finalization
+
+    %% Finalization flows
+    finalization --> hold_temp
+    finalization --> quit
+    finalization --> waitlisted
+
+    %% Refund processing
+    refund_processing --> refunded
+    refund_processing --> quit
+
+    %% Hold or quit
+    hold_temp --> quit
+    quit --> [*]
+    refunded --> quit
+    refunded --> [*]
+    hold_temp --> [*]
+```
+
+### Stage Descriptions
+
+#### **Initial Application Stages**
+
+**1. Draft**
+- Application is being created/edited by applicant
+- No payment required at this stage
+- Can transition to either online or offline payment submission
+
+**2. Submitted (Payment Processing)**
+- `submitted_online_payment`: Application submitted with online payment
+- `submitted_offline_payment`: Application submitted with offline payment method
+- Awaiting payment confirmation
+
+#### **Payment Verification**
+
+**3. Payment Status**
+- `payment_success`: Payment confirmed and processed successfully
+- `payment_failed`: Payment processing failed, returns to submission stage
+
+#### **Review and Verification Process**
+
+**4. Under Review**
+- Application documents and eligibility being reviewed by REC (Real Estate Committee)
+- Can proceed to verification or be rejected
+
+**5. Verification Outcomes**
+- `verified`: Application meets all eligibility criteria
+- `rejected_by_REC`: Application rejected due to eligibility issues, proceeds to refund
+
+#### **Bank Approval Process**
+
+**6. Bank Decision**
+- `bank_approved`: Financial verification successful
+- `bank_rejected`: Bank rejects the application for financing
+
+**7. Alternative Process** (for bank rejected applications)
+- `alternative_offered`: System offers alternative units/terms
+- `alternative_accepted`: Applicant accepts the alternative offer
+
+#### **Allocation Process**
+
+**8. Preferential Check**
+- System checks if applicant qualifies for preferential allocation
+- Routes to either manual allocation or lottery pool
+
+**9. Allocation Methods**
+- `manual_unit_allocation`: Direct allocation for preferential candidates
+- `lottery_pool`: Added to lottery system for random/weighted selection
+
+#### **Lottery Outcomes**
+
+**10. Lottery Results**
+- `lottery_selected`: Won a unit in the lottery
+- `lottery_not_selected`: Not selected in lottery
+
+#### **Final Stages**
+
+**11. Finalization**
+- Unit allocation confirmed, paperwork and agreements processing
+- Can lead to temporary hold, completion, or return to waitlist
+
+**12. Exit States**
+- `hold_temp`: Temporary hold status
+- `quit`: Application terminated/withdrawn
+- `waitlisted`: Placed on waitlist for future opportunities
+- `refunded`: Refund processed for unsuccessful applications
+
+### Key Lifecycle Features
+
+#### **Flexible Pathways**
+- Multiple entry points for different payment methods
+- Alternative pathways for rejected applications
+- Circular flows for waitlisted applicants
+
+#### **Quality Gates**
+- Payment verification checkpoint
+- REC review and approval
+- Bank financial verification
+- Preferential eligibility assessment
+
+#### **Recovery Mechanisms**
+- Failed payments can retry with different methods
+- Bank-rejected applications get alternative offers
+- Waitlisted applications can re-enter lottery pools
+- Comprehensive refund processing for unsuccessful cases
+
+#### **State Transitions Validation**
+The system enforces valid transitions between states to maintain data integrity and ensure proper application flow. Invalid transitions are blocked to prevent inconsistent application states.
 
 ---
 
@@ -1277,15 +1582,62 @@ const optimalWeights = machineLearning.optimize({
 
 ## Summary
 
-The Real Estate Lottery System provides powerful tools for customizing unit allocation. The key is understanding:
+The Real Estate Lottery Management System (RELMS) provides a comprehensive, flexible, and transparent platform for managing real estate allocations through a fair lottery process. This guide has covered the essential components and concepts needed to effectively use and configure the system.
 
-1. **How scoring works**: Base Weight × Value Weight for each rule
-2. **Bias vs Fairness trade-off**: Higher weight differences = more bias toward preferred groups
-3. **Configuration impact**: Small weight changes can significantly affect outcomes
-4. **Testing importance**: Always validate with sample data before going live
+### Key Takeaways
 
-Remember: There's no "perfect" configuration - it depends entirely on your housing program's specific goals and target beneficiaries.
+#### **System Capabilities**
+1. **Inventory Management**: Hierarchical organization of projects, phases, and units with real-time status tracking
+2. **Application Lifecycle**: Complete workflow from draft application to final allocation with audit trails
+3. **Lottery Engine**: Configurable scoring system that can balance fairness with targeted preferences
+4. **Transparency**: Full explainability of scoring decisions and allocation outcomes
+
+#### **Configuration Principles**
+1. **Scoring Mechanics**: Base Weight × Value Weight determines each rule's contribution to total score
+2. **Bias vs Fairness**: Weight differences control preference strength - larger differences create more bias
+3. **Impact Assessment**: Small configuration changes can significantly affect allocation outcomes
+4. **Testing Strategy**: Always validate configurations with sample data before deployment
+
+#### **Best Practices**
+- Start with moderate settings and adjust incrementally
+- Document all configuration decisions and rationale
+- Involve stakeholders in reviewing and approving lottery rules
+- Monitor outcomes and adjust based on program goals
+- Maintain comprehensive audit trails for regulatory compliance
+
+### Getting Started
+
+1. **Review Inventory Structure**: Understand how your projects and units are organized
+2. **Map Application Flow**: Familiarize yourself with the application lifecycle stages
+3. **Configure Lottery Rules**: Set up scoring criteria based on your program objectives
+4. **Test Thoroughly**: Run scenarios with sample data to validate expected outcomes
+5. **Deploy and Monitor**: Launch your lottery and track results against goals
+
+### Support and Resources
+
+Remember: There's no "perfect" configuration - the optimal setup depends entirely on your housing program's specific goals, target beneficiaries, and regulatory requirements. The system's flexibility allows you to adapt as needs evolve.
 
 ---
 
-*This documentation was created to help administrators understand and configure the lottery system effectively. For technical support, please contact the development team.*
+## Appendix
+
+### Technical Support
+For technical assistance, system configuration help, or troubleshooting, please contact the development team.
+
+### Glossary
+
+**Allocation State**: The current status of a unit (available, allotted, sold, preferred, hold)  
+**Application Lifecycle**: The complete journey of an application from draft to final status  
+**Base Weight**: The importance multiplier for a specific scoring rule  
+**Bias**: Systematic preference for certain applicant characteristics  
+**Fairness**: Equal treatment and opportunity for all applicants  
+**Lottery Pool**: Collection of eligible applications ready for random/weighted selection  
+**Phase**: A subdivision of a project representing a development stage  
+**Preferential Allocation**: Direct unit assignment bypassing the lottery process  
+**Scoring Rule**: A configuration that assigns points based on applicant characteristics  
+**Value Weight**: The multiplier applied to specific values within a scoring rule  
+**Waitlist**: Ranked list of unsuccessful applicants for future opportunities
+
+---
+
+*This documentation was created to help administrators understand and configure the lottery system effectively. Last updated: January 2025*
